@@ -1,16 +1,26 @@
 import torch
 from rdkit import Chem
 from signaturizer import Signaturizer
+import sys 
+from pathlib import Path
+
+
+project_root = Path(__file__).parent.parent.resolve()  
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
 from model.models import GenomicExpressionNet2
-import numpy as np 
 
 class GEx_Predictor():
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"[INFO] Using device: {self.device}")
+        
+        project_root = Path(__file__).parent.parent.resolve()
+        pt_path = project_root / "model" / "fold_4.pt"
 
-        print("[INFO] Loading trained model...")
-        self.model = torch.load("model/fold_4.pt", map_location=self.device, weights_only = False)
+        print(f"[INFO] Loading trained model from {pt_path} ...")
+        self.model = torch.load(pt_path, map_location=self.device, weights_only=False)
         print("[INFO] Model loaded successfully.")
 
     def standarize_smiles(self, input_smiles):
@@ -56,10 +66,10 @@ class GEx_Predictor():
         else:
             raise NotImplementedError("Only 'SMILES' input_type is implemented.")
 
-        sigantures_to_predict = self.get_GLOBAL_Signature(standardized_smiles)
+        signatures_to_predict = self.get_GLOBAL_Signature(standardized_smiles)
 
         print("[STEP] Converting signatures to tensor and performing prediction...")
-        x = torch.tensor(sigantures_to_predict, dtype=torch.float32, device=self.device)
+        x = torch.tensor(signatures_to_predict, dtype=torch.float32, device=self.device)
 
         self.model.eval()
         with torch.no_grad():

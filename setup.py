@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='GEx_Predictor',
     version='1.0.0',
-    author='Tu Nombre',
+    author='AdriaVico',
     author_email='adria.vico@irbbarcelona.org',
     description='Predict gene expression from SMILES using GLOBAL molecular signatures.',
     long_description=open('README.md', encoding='utf-8').read(),
@@ -11,10 +11,9 @@ setup(
     url='https://github.com/AdriaVico/GEx_Predictor.git',  
     packages=find_packages(),
     install_requires=[
-        'torch>=2.0.0,<3.0.0',
-        'rdkit-pypi>=2023.9.1',
-        'signaturizer>=0.1.0',
-        'numpy>=1.25.0'
+        "torch>=2.0.0,<3.0.0",
+        "rdkit-pypi>=2023.3.1b1",
+        'signaturizer>=0.1.0'
     ],
     python_requires='>=3.10',
     zip_safe=False,
