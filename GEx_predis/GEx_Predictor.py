@@ -2,6 +2,7 @@ import torch
 from rdkit import Chem
 from signaturizer import Signaturizer
 from model.models import GenomicExpressionNet2
+import numpy as np 
 
 class GEx_Predictor():
     def __init__(self):

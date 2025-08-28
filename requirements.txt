@@ -1,0 +1,4 @@
+torch>=2.0.0,<3.0.0          # PyTorch for model inference
+numpy>=1.25.0,<2.0.0         # Numerical operations and array handling
+rdkit-pypi>=2023.9.1          # RDKit for molecule parsing and standardization
+signaturizer>=0.1.0 
