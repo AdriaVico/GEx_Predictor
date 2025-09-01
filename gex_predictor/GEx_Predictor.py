@@ -1,5 +1,6 @@
 import torch
 from rdkit import Chem
+from rdkit.Chem.MolStandardize  import rdMolStandardize
 from signaturizer import Signaturizer
 import sys 
 from pathlib import Path
@@ -11,6 +12,11 @@ if str(project_root) not in sys.path:
 
 from model.models import GenomicExpressionNet2
 
+# Ensure the model directory is in the Python path
+model_dir = project_root / "model"
+if str(model_dir) not in sys.path:
+    sys.path.append(str(model_dir))
+
 class GEx_Predictor():
     def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -18,32 +24,36 @@ class GEx_Predictor():
         
         project_root = Path(__file__).parent.parent.resolve()
         pt_path = project_root / "model" / "fold_4.pt"
-
+        print(pt_path)
         print(f"[INFO] Loading trained model from {pt_path} ...")
         self.model = torch.load(pt_path, map_location=self.device, weights_only=False)
         print("[INFO] Model loaded successfully.")
 
-    def standarize_smiles(self, input_smiles):
-        try:
-            mol = Chem.MolFromSmiles(input_smiles)
-            if mol is None:
+    def standardize_smiles(self, input_smiles):
+        standardize = []
+        for smile in input_smiles:
+            try:
+                mol = Chem.MolFromSmiles(smile)
+                if mol is None:
+                    return None
+
+                mol = rdMolStandardize.Cleanup(mol)
+
+                mol = rdMolStandardize.LargestFragmentChooser().choose(mol)
+                mol = rdMolStandardize.Uncharger().uncharge(mol)
+
+                # Add tautomer canonicalization if needed
+                mol = rdMolStandardize.TautomerEnumerator().Canonicalize(mol)
+
+                Chem.SanitizeMol(mol)
+
+                standardize.append(Chem.MolToSmiles(mol))
+
+            except Exception as e:
+                print(f"Could not process {input_smiles}: {e}")
                 return None
 
-            mol = Chem.rdMolStandardize.Cleanup(mol)
-
-            mol = Chem.rdMolStandardize.LargestFragmentChooser().choose(mol)
-            mol = Chem.rdMolStandardize.Uncharger().uncharge(mol)
-
-            mol = Chem.rdMolStandardize.TautomerEnumerator().Canonicalize(mol)
-
-            Chem.SanitizeMol(mol)
-
-            return Chem.MolToSmiles(mol)
-
-        except Exception as e:
-            print(f"Could not process {input_smiles}: {e}")
-            return None
-        
+        return standardize
 
     def get_GLOBAL_Signature(self, input_smiles):
 
@@ -55,12 +65,12 @@ class GEx_Predictor():
         return results.signature[:]
     
 
-    def predict(self, input, input_type = "SMILES"):
+    def predict(self, input_smile, input_type = "SMILES"):
 
         print(f"[INFO] Starting prediction for input type: {input_type}")
-
+        print("INPUT", input_smile.shape)
         if input_type.upper() == "SMILES":
-            standardized_smiles = self.standarize_smiles(input)
+            standardized_smiles = self.standardize_smiles(input_smile)
             if standardized_smiles is None:
                 raise ValueError("[ERROR] Failed to standardize input SMILES.")
         else:
